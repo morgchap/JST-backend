@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const listSchema = mongoose.Schema({
     isPublic: Boolean,
     collectionName: String,
-    user: [{ type: Schema.Types.ObjectId, ref: 'users'}],
-    gameList: [{ type: Schema.Types.ObjectId, ref: 'games'}],
+    user: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    gameList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'games'}],
 
 });
 

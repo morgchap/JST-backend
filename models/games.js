@@ -9,8 +9,8 @@ const gameSchema = mongoose.Schema({
     releaseDate: Date,
     genre: String,
     studio: String,
-    userOpinion: [{ type: Schema.Types.ObjectId, ref: 'users'}],
-    collection: [{ type: Schema.Types.ObjectId, ref: 'lists'}],
+    userOpinion: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    collection: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lists'}],
 
 });
 
