@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
-const userSchema = mongoose.Schema({
-    email: String,
-    username : String,
-    password : String,
-    profilePicture: String,
+const friendSchema = mongoose.Schema({
+    sender: String,
+    receiver : String,
+    status : String,
+    sendingDate: Date,
+    approvingDate: Date,
     friendsList: [{ type: Schema.Types.ObjectId, ref: 'users'}],
     lists: [{ type: Schema.Types.ObjectId, ref: 'lists'}],
     ratingsID: [{ type: Schema.Types.ObjectId, ref: 'ratings'}],
@@ -13,6 +14,6 @@ const userSchema = mongoose.Schema({
 
 });
 
-const User = mongoose.model('users', userSchema);
+const Friend = mongoose.model('friends', friendSchema);
 
-module.exports = User;
+module.exports = Friend;
