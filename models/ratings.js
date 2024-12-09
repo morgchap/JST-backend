@@ -2,8 +2,8 @@
 const mongoose = require('mongoose');
 
 const ratingSchema = mongoose.Schema({
-    game: [{ type: mongoose.Schema.Types.ObjectId, ref: 'games'}],
-    user: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    game: { type: mongoose.Schema.Types.ObjectId, ref: 'games'},
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'users'},
     writtenOpinion: String,
     note: Number,
     likesNumber: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
