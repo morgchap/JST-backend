@@ -3,8 +3,8 @@
 const mongoose = require('mongoose');
 
 const friendSchema = mongoose.Schema({
-    sender: [{ type: Schema.Types.ObjectId, ref: 'users'}],
-    receiver : [{ type: Schema.Types.ObjectId, ref: 'users'}],
+    sender: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    receiver : [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
     status: String,
     sendingdate: Date,
     approvingdate: Date,
