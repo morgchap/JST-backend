@@ -5,10 +5,10 @@ const userSchema = mongoose.Schema({
     username : String,
     password : String,
     profilePicture: String,
-    friendsList: [{ type: Schema.Types.ObjectId, ref: 'users'}],
-    lists: [{ type: Schema.Types.ObjectId, ref: 'lists'}],
-    ratingsID: [{ type: Schema.Types.ObjectId, ref: 'ratings'}],
-    blockedUsers: [{ type: Schema.Types.ObjectId, ref: 'users'}],
+    friendsList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    lists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lists'}],
+    ratingsID: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ratings'}],
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
     token: String,
 
 });
