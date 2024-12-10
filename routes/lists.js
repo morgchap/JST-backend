@@ -53,4 +53,9 @@ console.log(userId, listName)
   } catch(error) { console.log(error) }
 })
 
+
+// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
+
+
+
 module.exports = router;
