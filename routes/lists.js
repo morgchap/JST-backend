@@ -13,84 +13,94 @@ const User = require('../models/users')
 // create a list
 router.post("/addList", (req, res) => {
   try{
-    const { listName, userId, isPublic } = req.body
+    const { listName, username, isPublic } = req.body
 
     // check if the user enter a list name
     if(!listName || listName === ""){
       res.status(400).json({ result: false, error: "Missing name for the list" })
       return
     }
-    // check if user is connected
-    if(!userId){
-      res.status(400).json({ result: false, error: "Missing user id, are you connected ?" })
-      return
-    }
 
-    // if the user already have a list with this name, send an error
-    List.find({ user: userId, listName }).then(data => {
-      if(data.length !== 0){
-        // if the user already have a list with this name, send an error
-        res.status(400).json({ result: false, error: "List already in the database" })
+    User.findOne({ username }).then(data => {
+
+      const userId = data._id
+
+      // check if user is connected
+      if(!userId){
+        res.status(400).json({ result: false, error: "Missing user id, are you connected ?" })
         return
-      } else {
-        // if everything is fine, save the newlist in the database
-        const newList = new List({
-          isPublic,
-          listName,
-          user: userId,
-          gameList: [],
-        })
-    
-        newList.save().then(data => {
-          if(data){
-            res.json({ result: true })
-          } else {
-            res.json({ result: false })
-          }
-        })
       }
+      
+      // if the user already have a list with this name, send an error
+      List.find({ user: userId, listName }).then(data => {
+        if(data.length !== 0){
+          // if the user already have a list with this name, send an error
+          res.status(400).json({ result: false, error: "List already in the database" })
+          return
+        } else {
+          // if everything is fine, save the newlist in the database
+          const newList = new List({
+            isPublic,
+            listName,
+            user: userId,
+            gameList: [],
+          })
+      
+          newList.save().then(data => {
+            if(data){
+              res.json({ result: true, list: data })
+            } else {
+              res.json({ result: false })
+            }
+          })
+        }
+      })
     })
   } catch(error) { console.log(error) }
 })
 
 
 // get all the lists of a user
-router.get("/:idUser", (req, res) => {
+router.get("/:username", (req, res) => {
   try{
-    const { idUser } = req.params
+    const { username } = req.params
 
     // check if idUser is undefined
-    if(!idUser){
-      res.status(400).json({ result: false, error: "idUser is undefined" })
+    if(!username){
+      res.status(400).json({ result: false, error: "username is undefined" })
       return
     }
 
-    List.find({ user: idUser }).then(data => {
-      if(data.length === 0){
-        // if the user don't have any list
-        res.status(400).json({ result: false, error: "You don't have any list in the database" })
+    // you need to fetch in the user collection to get the id of the user
+    User.findOne({ username }).then(data => {
+      // check if username is undefined
+      if(!data){
+        res.status(400).json({ result: false, error: "Didn't find the user in the database" })
         return
-      } else {
-        // if everything is fine, send all the user's list
-        res.json({ result: true, lists: data })
       }
+      List.find({ user: data._id }).then(data => {
+        if(data.length === 0){
+          // if the user don't have any list
+          res.status(400).json({ result: false, error: "You don't have any list in the database" })
+          return
+        } else {
+          // if everything is fine, send all the user's list
+          res.json({ result: true, lists: data })
+        }
+      })
     })
+
   } catch(error) { console.log(error) }
 })
 
 
-<<<<<<< HEAD
 // route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'utilisateur importe ses jeux a la création de son compte
-=======
-
-// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
->>>>>>> f4d5b16dd3f3a6b07b5a48fdb6ad54d9b5d84bb0
 
 router.post("/allgames", (req, res) => {
   try{
     User.findOne({username : req.body.username}).then(userinfo=> {
       if(!userinfo){
-        // check if idUser is undefined
+    // check if idUser is undefined
       res.status(400).json({ result: false, error: "user is undefined" })
       return
 
@@ -98,30 +108,51 @@ router.post("/allgames", (req, res) => {
         let userId = userinfo._id
         List.findOne({ user: userId, listName: 'All my games' }).then(result => {
 console.log(result)
-            // if everything is fine, create a new document in the game database,
-            const newGame = new Game ({
-              cover: req.body.img,
-              name: req.body.name, 
-              summary: req.body.description,
-              releaseDate: req.body.release,
-              genre: req.body.genre,
-              studio: req.body.studio,
+        // if everything is fine, create a new document in the game database,
+        const newGame = new Game ({
+          cover: req.body.img,
+          name: req.body.name, 
+          summary: req.body.description,
+          releaseDate: req.body.release,
+          genre: req.body.genre,
+          studio: req.body.studio,
               lists:result._id
-            })
-            newGame.save().then(data=>{
-      
-              // ajout d'un jeu a la liste all games 
-              List.updateOne({ user: userId, listName: 'All my games' }, { $push: { "gameList": data._id } }
-              ).then(newDoc => {
-                res.json({ result: true, games: data.games})
-            })
         })
-        }
-        )
+        newGame.save().then(data=>{
+  
+          // ajout d'un jeu a la liste all games 
+              List.updateOne({ user: userId, listName: 'All my games' }, { $push: { "gameList": data._id } }
+          ).then(newDoc => {
+            res.json({ result: true, games: data.games})
+        })
+    })
+    }
+    )
       } 
     })
       }catch(error) { console.log(error) }
+})
+
+
+// delete the list
+router.delete("/:listName", (req, res) => {
+  try{
+    const { listName } = req.params
+
+    if(!listName){
+      res.status(400).json({ result: false, error: "There is no list with that name." })
+      return
+    }
+
+    List.deleteOne({ listName }).then(data => {
+      if(data === 0){
+        res.status(417).json({ result: false, error: "Deletion failed" })
+        return
+      }
+      res.json({ result: true })
     })
+  } catch(error) { console.log(error) }
+})
 
 
 module.exports = router;
