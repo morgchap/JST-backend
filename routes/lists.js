@@ -120,4 +120,28 @@ console.log(result)
     })
 
 
+    router.get("/id/:listId", (req, res) => {
+      try{
+        const { listId } = req.params
+    
+        // check if idUser is undefined
+        if(!listId){
+          res.status(400).json({ result: false, error: "idUser is undefined" })
+          return
+        }
+    
+        List.findById(listId).then(data => {
+          if(!data){
+            // if the list doesn't exist
+            res.status(400).json({ result: false, error: "You don't have any list in the database" })
+            return
+          } else {
+            // if everything is fine, send all the user's list
+            res.json({ result: true, lists: data })
+          }
+        })
+      } catch(error) { console.log(error) }
+    })
+
+
 module.exports = router;
