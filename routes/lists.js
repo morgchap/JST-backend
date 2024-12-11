@@ -94,6 +94,7 @@ router.get("/:username", (req, res) => {
 })
 
 
+<<<<<<< HEAD
 // route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'utilisateur importe ses jeux a la création de son compte
 
 router.post("/allgames", (req, res) => {
@@ -153,6 +154,61 @@ router.delete("/:listName", (req, res) => {
     })
   } catch(error) { console.log(error) }
 })
+=======
+// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
+
+router.post("/allgames", async (req, res) => {
+  try {
+    const userinfo = await User.findOne({ username: req.body.username });
+
+    if (!userinfo) {
+      return res.status(400).json({ result: false, error: "user is undefined" });
+    }
+
+    const userId = userinfo._id;
+
+    const list = await List.findOne({ user: userId, listName: 'All my games' });
+
+    if (!list) {
+      return res.status(400).json({ result: false, error: "User's game list not found" });
+    }
+
+    // Check if the game is already in the database
+    const gameresult = await Game.findOne({ name: req.body.name });
+
+    let game;
+    if (!gameresult) {
+      // Create a new game if it doesn't exist
+      game = new Game({
+        cover: req.body.img,
+        name: req.body.name,
+        summary: req.body.description,
+        releaseDate: req.body.release,
+        genre: req.body.genre,
+        studio: req.body.studio,
+        lists: list._id, // Add to the game list
+      });
+
+      // Save the new game
+      game = await game.save();
+    } else {
+      game = gameresult; // Use the existing game
+    }
+
+    // Add the game to the user's 'All my games' list
+    await List.updateOne(
+      { user: userId, listName: 'All my games' },
+      { $push: { gameList: game._id } }
+    );
+
+    res.json({ result: true });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ result: false, error: "Something went wrong" });
+  }
+});
+>>>>>>> f077c63f022dac42b03f41f5697b10c7c9e5fb2e
 
 
 module.exports = router;
