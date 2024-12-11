@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 require('../models/connection');
 const List = require("../models/lists")
+const Game = require("../models/games")
 
 /* GET users listing. */
 /*router.get('/', function(req, res, next) {
@@ -23,6 +24,8 @@ router.post("/addList", (req, res) => {
       res.status(400).json({ result: false, error: "Missing user id, are you connected ?" })
       return
     }
+
+    // if the user already have a list with this name, send an error
     List.find({ user: userId, listName }).then(data => {
       if(data.length !== 0){
         // if the user already have a list with this name, send an error
@@ -75,8 +78,50 @@ router.get("/:idUser", (req, res) => {
 })
 
 
+<<<<<<< HEAD
 // route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'utilisateur importe ses jeux a la création de son compte
+=======
 
+// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
+>>>>>>> f4d5b16dd3f3a6b07b5a48fdb6ad54d9b5d84bb0
+
+router.post("/allgames", (req, res) => {
+  try{
+
+    // check if idUser is undefined
+    if(!req.body.username){
+      res.status(400).json({ result: false, error: "idUser is undefined" })
+      return
+    }
+
+    List.findOne({ username: req.body.username, listName: 'All my games' }).then(result => {
+      console.log('result')
+        // if everything is fine, create a new document in the game database,
+        const newGame = new Game ({
+          cover: req.body.img,
+          name: req.body.name, 
+          summary: req.body.description,
+          releaseDate: req.body.release,
+          genre: req.body.genre,
+          studio: req.body.studio,
+          lists: result._id
+        })
+        newGame.save().then(data=>{
+  
+          // ajout d'un jeu a la liste all games 
+          List.updateOne(
+            { user: req.body.username, listName: 'All my games' }, 
+            { 
+              $push: { "games": data._id } 
+            }
+          ).then(newDoc => {
+            res.json({ result: true, games: data.games})
+        })
+    })
+    }
+    )
+  } catch(error) { console.log(error) }
+})
 
 
 module.exports = router;

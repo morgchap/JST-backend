@@ -10,7 +10,7 @@ const gameSchema = mongoose.Schema({
     genre: String,
     studio: String,
     userOpinion: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
-    collection: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lists'}],
+    lists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lists'}],
 
 });
 
