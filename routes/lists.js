@@ -81,66 +81,57 @@ router.get("/:idUser", (req, res) => {
 
 // route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
 
-router.post("/allgames", (req, res) => {
-  try{
-    User.findOne({username : req.body.username}).then(userinfo=> {
-      if(!userinfo){
-        // check if idUser is undefined
-      res.status(400).json({ result: false, error: "user is undefined" })
-      return
+router.post("/allgames", async (req, res) => {
+  try {
+    const userinfo = await User.findOne({ username: req.body.username });
 
-      } else {
-        let userId = userinfo._id
-        List.findOne({ user: userId, listName: 'All my games' }).then(result => {
-console.log(result)
-            // if everything is fine, create a new document in the game database,
-            const newGame = new Game ({
-              cover: req.body.img,
-              name: req.body.name, 
-              summary: req.body.description,
-              releaseDate: req.body.release,
-              genre: req.body.genre,
-              studio: req.body.studio,
-              lists:result._id
-            })
-            newGame.save().then(data=>{
-      
-              // ajout d'un jeu a la liste all games 
-              List.updateOne({ user: userId, listName: 'All my games' }, { $push: { "gameList": data._id } }
-              ).then(newDoc => {
-                res.json({ result: true, games: data.games})
-            })
-        })
-        }
-        )
-      } 
-    })
-      }catch(error) { console.log(error) }
-    })
+    if (!userinfo) {
+      return res.status(400).json({ result: false, error: "user is undefined" });
+    }
 
+    const userId = userinfo._id;
 
-    router.get("/id/:listId", (req, res) => {
-      try{
-        const { listId } = req.params
-    
-        // check if idUser is undefined
-        if(!listId){
-          res.status(400).json({ result: false, error: "idUser is undefined" })
-          return
-        }
-    
-        List.findById(listId).then(data => {
-          if(!data){
-            // if the list doesn't exist
-            res.status(400).json({ result: false, error: "You don't have any list in the database" })
-            return
-          } else {
-            // if everything is fine, send all the user's list
-            res.json({ result: true, lists: data })
-          }
-        })
-      } catch(error) { console.log(error) }
-    })
+    const list = await List.findOne({ user: userId, listName: 'All my games' });
+
+    if (!list) {
+      return res.status(400).json({ result: false, error: "User's game list not found" });
+    }
+
+    // Check if the game is already in the database
+    const gameresult = await Game.findOne({ name: req.body.name });
+
+    let game;
+    if (!gameresult) {
+      // Create a new game if it doesn't exist
+      game = new Game({
+        cover: req.body.img,
+        name: req.body.name,
+        summary: req.body.description,
+        releaseDate: req.body.release,
+        genre: req.body.genre,
+        studio: req.body.studio,
+        lists: list._id, // Add to the game list
+      });
+
+      // Save the new game
+      game = await game.save();
+    } else {
+      game = gameresult; // Use the existing game
+    }
+
+    // Add the game to the user's 'All my games' list
+    await List.updateOne(
+      { user: userId, listName: 'All my games' },
+      { $push: { gameList: game._id } }
+    );
+
+    res.json({ result: true });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ result: false, error: "Something went wrong" });
+  }
+});
 
 
 module.exports = router;

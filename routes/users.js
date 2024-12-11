@@ -88,5 +88,62 @@ router.get('/:user', (req, res) => {
   })
 })
 
+// route post pour updater le username
+
+router.post("/updateUsername", (req, res) => {
+
+  User.updateOne({ username : req.body.currentUsername}, {username : req.body.newUsername})
+  .then(() => {
+    User.findOne({ username : req.body.newUsername })
+    .then(data => {
+      if (data) {
+        res.json({result: true, updatedProfile: data})
+      } else {
+        res.json({ result: false, error: 'Update did not work' });
+      }
+    })
+  } )
+
+})
+
+// route post pour updater l'email
+
+router.post("/updateEmail", (req, res) => {
+
+  User.updateOne({ email : req.body.currentEmail}, {email : req.body.newEmail})
+  .then(() => {
+    User.findOne({ email : req.body.newEmail })
+    .then(data => {
+      if (data) {
+        res.json({result: true, updatedProfile: data})
+      } else {
+        res.json({ result: false, error: 'Update did not work' });
+      }
+    })
+  } )
+
+})
+
+//route pour modifier le password
+
+router.post("/updatePassword", (req, res) => {
+
+  const hash = bcrypt.hashSync(req.body.newPassword, 10);
+
+  User.updateOne({ username : req.body.username}, {password : hash})
+  .then(() => {
+    User.findOne({ username : req.body.username })
+    .then(data => {
+      if (data) {
+        res.json({ result: true, message: 'Password updated' });
+      } else {
+        res.json({ result: false, error: 'Update did not work' });
+      }
+    })
+  } )
+
+})
+
+
 
 module.exports = router;
