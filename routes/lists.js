@@ -78,13 +78,6 @@ router.get("/:idUser", (req, res) => {
 })
 
 
-<<<<<<< HEAD
-// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'utilisateur importe ses jeux a la création de son compte
-=======
-
-// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
->>>>>>> f4d5b16dd3f3a6b07b5a48fdb6ad54d9b5d84bb0
-
 router.post("/allgames", (req, res) => {
   try{
 
