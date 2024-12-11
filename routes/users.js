@@ -7,8 +7,9 @@ const User = require('../models/users');
 const { checkBody } = require('../modules/checkBody');
 const uid2 = require('uid2');
 const bcrypt = require('bcrypt');
+const List = require("../models/lists")
 
-//route post pour s'inscrire (avec vérif par checkBody) :
+//route post pour s'inscrire (avec vérif par checkBody) + création d'une collection 'all my games' :
 
 router.post('/signup', (req, res) => {
   if (!checkBody(req.body, ['username', 'password', 'email'])) {
@@ -18,8 +19,8 @@ router.post('/signup', (req, res) => {
   // Check if the user has not already been registered
   User.findOne({ 
     $or: [
-      { user : req.body.email },
-      { email: req.body.username }
+      { username : req.body.username },
+      { email: req.body.email }
     ] 
     }).then(data => {
     if (data === null) {
@@ -27,14 +28,31 @@ router.post('/signup', (req, res) => {
 
       const newUser = new User({
         email:req.body.email,
-        firsname: req.body.firstname,
         username: req.body.username,
         password: hash,
         token: uid2(32),
         
       });
-      newUser.save().then(newDoc => {
-        res.json({ result: true, token: newDoc.token, username: newDoc.username });
+      newUser.save().then(userfound => {
+        //res.json({ result: true, token: newDoc.token, username: newDoc.username });
+        // création d'une nouvelle list
+        const newList = new List({
+          isPublic: false,
+          listName: 'All my games',
+          user: userfound._id,
+        }); 
+        newList.save().then(data=>{
+          //res.json({ result: true, id: data._id });
+          // ajout de cette nouvelle list au user 
+          User.updateOne(
+            { username: userfound.username }, 
+            { 
+              $push: { "lists": data._id } 
+            }
+          ).then(newDoc => {
+            res.json({ result: true, lists: newDoc.lists, token: userfound.token, username: userfound.username})
+        })
+})
       });
     } else {
       // User already exists in database
@@ -59,6 +77,16 @@ router.post('/signin', (req, res) => {
     }
   });
 });
+
+// route get pour recuperer les infos du user 
+
+router.get('/:user', (req, res) => {
+  User.findOne({username : req.params.user}).then(data=>{
+    if(data){
+      res.json({result: true, infos: data})
+    }
+  })
+})
 
 
 module.exports = router;
