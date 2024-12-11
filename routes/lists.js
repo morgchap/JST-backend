@@ -3,6 +3,7 @@ var router = express.Router();
 require('../models/connection');
 const List = require("../models/lists")
 const Game = require("../models/games")
+const User = require('../models/users')
 
 /* GET users listing. */
 /*router.get('/', function(req, res, next) {
@@ -78,43 +79,68 @@ router.get("/:idUser", (req, res) => {
 })
 
 
+// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
+
 router.post("/allgames", (req, res) => {
   try{
-
-    // check if idUser is undefined
-    if(!req.body.username){
-      res.status(400).json({ result: false, error: "idUser is undefined" })
+    User.findOne({username : req.body.username}).then(userinfo=> {
+      if(!userinfo){
+        // check if idUser is undefined
+      res.status(400).json({ result: false, error: "user is undefined" })
       return
-    }
 
-    List.findOne({ username: req.body.username, listName: 'All my games' }).then(result => {
-      console.log('result')
-        // if everything is fine, create a new document in the game database,
-        const newGame = new Game ({
-          cover: req.body.img,
-          name: req.body.name, 
-          summary: req.body.description,
-          releaseDate: req.body.release,
-          genre: req.body.genre,
-          studio: req.body.studio,
-          lists: result._id
+      } else {
+        let userId = userinfo._id
+        List.findOne({ user: userId, listName: 'All my games' }).then(result => {
+console.log(result)
+            // if everything is fine, create a new document in the game database,
+            const newGame = new Game ({
+              cover: req.body.img,
+              name: req.body.name, 
+              summary: req.body.description,
+              releaseDate: req.body.release,
+              genre: req.body.genre,
+              studio: req.body.studio,
+              lists:result._id
+            })
+            newGame.save().then(data=>{
+      
+              // ajout d'un jeu a la liste all games 
+              List.updateOne({ user: userId, listName: 'All my games' }, { $push: { "gameList": data._id } }
+              ).then(newDoc => {
+                res.json({ result: true, games: data.games})
+            })
         })
-        newGame.save().then(data=>{
-  
-          // ajout d'un jeu a la liste all games 
-          List.updateOne(
-            { user: req.body.username, listName: 'All my games' }, 
-            { 
-              $push: { "games": data._id } 
-            }
-          ).then(newDoc => {
-            res.json({ result: true, games: data.games})
-        })
+        }
+        )
+      } 
     })
-    }
-    )
-  } catch(error) { console.log(error) }
-})
+      }catch(error) { console.log(error) }
+    })
+
+
+    router.get("/id/:listId", (req, res) => {
+      try{
+        const { listId } = req.params
+    
+        // check if idUser is undefined
+        if(!listId){
+          res.status(400).json({ result: false, error: "idUser is undefined" })
+          return
+        }
+    
+        List.findById(listId).then(data => {
+          if(!data){
+            // if the list doesn't exist
+            res.status(400).json({ result: false, error: "You don't have any list in the database" })
+            return
+          } else {
+            // if everything is fine, send all the user's list
+            res.json({ result: true, lists: data })
+          }
+        })
+      } catch(error) { console.log(error) }
+    })
 
 
 module.exports = router;
