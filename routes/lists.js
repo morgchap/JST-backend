@@ -31,8 +31,7 @@ router.post("/addList", (req, res) => {
         return
       }
       
-      // if the user already have a list with this name, send an error
-      List.find({ user: userId, listName }).then(data => {
+      List.find({ user: userId, listName }).then( async (data) => {
         if(data.length !== 0){
           // if the user already have a list with this name, send an error
           res.status(400).json({ result: false, error: "List already in the database" })
@@ -45,14 +44,24 @@ router.post("/addList", (req, res) => {
             user: userId,
             gameList: [],
           })
-      
-          newList.save().then(data => {
+
+          // add the list in the database
+          await newList.save().then(data => {
             if(data){
               res.json({ result: true, list: data })
             } else {
               res.json({ result: false })
             }
           })
+
+          // add the list in the user's database
+          await List.findOne({ listName, user: userId }).then(data => {
+//console.log(data._id, userId)
+            //User.find({ _id: userId }).then(data => console.log(data))
+            User.updateOne({ _id: userId }, { $push: { lists: data._id } })
+              .then(data => console.log(data))
+          })
+
         }
       })
     })
@@ -94,67 +103,6 @@ router.get("/:username", (req, res) => {
 })
 
 
-<<<<<<< HEAD
-// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'utilisateur importe ses jeux a la création de son compte
-
-router.post("/allgames", (req, res) => {
-  try{
-    User.findOne({username : req.body.username}).then(userinfo=> {
-      if(!userinfo){
-    // check if idUser is undefined
-      res.status(400).json({ result: false, error: "user is undefined" })
-      return
-
-      } else {
-        let userId = userinfo._id
-        List.findOne({ user: userId, listName: 'All my games' }).then(result => {
-console.log(result)
-        // if everything is fine, create a new document in the game database,
-        const newGame = new Game ({
-          cover: req.body.img,
-          name: req.body.name, 
-          summary: req.body.description,
-          releaseDate: req.body.release,
-          genre: req.body.genre,
-          studio: req.body.studio,
-              lists:result._id
-        })
-        newGame.save().then(data=>{
-  
-          // ajout d'un jeu a la liste all games 
-              List.updateOne({ user: userId, listName: 'All my games' }, { $push: { "gameList": data._id } }
-          ).then(newDoc => {
-            res.json({ result: true, games: data.games})
-        })
-    })
-    }
-    )
-      } 
-    })
-      }catch(error) { console.log(error) }
-})
-
-
-// delete the list
-router.delete("/:listName", (req, res) => {
-  try{
-    const { listName } = req.params
-
-    if(!listName){
-      res.status(400).json({ result: false, error: "There is no list with that name." })
-      return
-    }
-
-    List.deleteOne({ listName }).then(data => {
-      if(data === 0){
-        res.status(417).json({ result: false, error: "Deletion failed" })
-        return
-      }
-      res.json({ result: true })
-    })
-  } catch(error) { console.log(error) }
-})
-=======
 // route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
 
 router.post("/allgames", async (req, res) => {
@@ -208,7 +156,37 @@ router.post("/allgames", async (req, res) => {
     res.status(500).json({ result: false, error: "Something went wrong" });
   }
 });
->>>>>>> f077c63f022dac42b03f41f5697b10c7c9e5fb2e
+
+
+// delete the list
+router.delete("/:listName/:username", async (req, res) => {
+  try{
+    const { listName, username } = req.params
+
+    // check if listName is undefined
+    if(!listName){
+      res.status(400).json({ result: false, error: "There is no list with that name." })
+      return
+    }
+    // check if username is undefined
+    if(!username){
+      res.status(400).json({ result: false, error: "There is no username with that name." })
+      return
+    }
+
+    const user = await User.findOne({ username });
+    const list = await List.findOne({ user: user._id, listName })
+    // delete the list from the user collection (user.lists)
+    await User.updateOne({ _id: user._id }, { $pull: {lists: list._id} })
+    
+    // delete the list from the List collection
+    await List.deleteOne({ _id: list._id })
+
+    res.json({ result: true })
+
+  } catch(error) { console.log(error) }
+})
+
 
 
 module.exports = router;
