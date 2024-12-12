@@ -94,67 +94,6 @@ router.get("/:username", (req, res) => {
 })
 
 
-<<<<<<< HEAD
-// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'utilisateur importe ses jeux a la création de son compte
-
-router.post("/allgames", (req, res) => {
-  try{
-    User.findOne({username : req.body.username}).then(userinfo=> {
-      if(!userinfo){
-    // check if idUser is undefined
-      res.status(400).json({ result: false, error: "user is undefined" })
-      return
-
-      } else {
-        let userId = userinfo._id
-        List.findOne({ user: userId, listName: 'All my games' }).then(result => {
-console.log(result)
-        // if everything is fine, create a new document in the game database,
-        const newGame = new Game ({
-          cover: req.body.img,
-          name: req.body.name, 
-          summary: req.body.description,
-          releaseDate: req.body.release,
-          genre: req.body.genre,
-          studio: req.body.studio,
-              lists:result._id
-        })
-        newGame.save().then(data=>{
-  
-          // ajout d'un jeu a la liste all games 
-              List.updateOne({ user: userId, listName: 'All my games' }, { $push: { "gameList": data._id } }
-          ).then(newDoc => {
-            res.json({ result: true, games: data.games})
-        })
-    })
-    }
-    )
-      } 
-    })
-      }catch(error) { console.log(error) }
-})
-
-
-// delete the list
-router.delete("/:listName", (req, res) => {
-  try{
-    const { listName } = req.params
-
-    if(!listName){
-      res.status(400).json({ result: false, error: "There is no list with that name." })
-      return
-    }
-
-    List.deleteOne({ listName }).then(data => {
-      if(data === 0){
-        res.status(417).json({ result: false, error: "Deletion failed" })
-        return
-      }
-      res.json({ result: true })
-    })
-  } catch(error) { console.log(error) }
-})
-=======
 // route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
 
 router.post("/allgames", async (req, res) => {
@@ -208,7 +147,6 @@ router.post("/allgames", async (req, res) => {
     res.status(500).json({ result: false, error: "Something went wrong" });
   }
 });
->>>>>>> f077c63f022dac42b03f41f5697b10c7c9e5fb2e
 
 
 module.exports = router;
