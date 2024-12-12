@@ -149,4 +149,23 @@ router.post("/allgames", async (req, res) => {
 });
 
 
+// route get pour chopper une liste par son id
+
+router.get("/id/:id", (req, res) => {
+
+  const { id } = req.params
+  
+  List.findById(id)
+  .then(data => {
+    if (data) {
+      res.json({result: true, data: data});
+      console.log(data);
+    } else {
+      res.json({ result: false, error: 'no lists found' });
+    }
+    
+  })
+});
+
+
 module.exports = router;
