@@ -9,7 +9,7 @@ const gameSchema = mongoose.Schema({
     releaseDate: Date,
     genre: String,
     studio: String,
-    userOpinion: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    userOpinion: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ratings'}],
     lists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'lists'}],
 
 });
