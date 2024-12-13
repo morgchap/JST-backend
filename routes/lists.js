@@ -56,8 +56,6 @@ router.post("/addList", (req, res) => {
 
           // add the list in the user's database
           await List.findOne({ listName, user: userId }).then(data => {
-//console.log(data._id, userId)
-            //User.find({ _id: userId }).then(data => console.log(data))
             User.updateOne({ _id: userId }, { $push: { lists: data._id } })
               .then(data => console.log(data))
           })
@@ -194,6 +192,7 @@ router.get("/id/:id", (req, res) => {
   const { id } = req.params
   
   List.findById(id)
+  .populate('gameList')
   .then(data => {
     if (data) {
       res.json({result: true, data: data});
