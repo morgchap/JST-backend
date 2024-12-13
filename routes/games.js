@@ -16,25 +16,31 @@ router.get("/fromsearch", async (req, res, next) => {
 
 // create a new game
 
-router.get("/:games", async (req, res, next) => {
-  const gameresult = await Game.findOne({ name: req.body.name });
+router.post("/newgames", async (req, res, next) => {
+ Game.findOne({ name: req.body.name }).then(data => {
+  
+ if(!data){
+  const newGame = new Game({
+    cover: req.body.img,
+    name: req.body.name,
+    summary: req.body.description,
+    releaseDate: req.body.release,
+    genre: req.body.genre,
+    studio: req.body.studio,
+  });
+  newGame.save().then(newDoc => {
+    res.json({result: true, gameid: newDoc._id})
+  }
+  )
+   }else {
+    res.json({result: false, error: 'game is already in the db'})
+   }
+  
+  })
+ }
+)
 
-  let game;
-  if (!gameresult) {
-    // Create a new game if it doesn't exist
-    game = new Game({
-      cover: req.body.img,
-      name: req.body.name,
-      summary: req.body.description,
-      releaseDate: req.body.release,
-      genre: req.body.genre,
-      studio: req.body.studio,
-      lists: list._id, // Add to the game list
-    });
 
-    // Save the new game
-    game = await game.save();}
-});
 
 
 
@@ -87,6 +93,19 @@ router.post("/addToList/:username/:listName", async (req, res) => {
   } /* id de game trouvable dans game._id */
 
   List.updateOne({ user: userId, listName })
+})
+
+
+/// route to get a game by its name
+
+router.post('/byname', (req, res) => {
+  Game.findOne({ name: req.body.name }).then(data => {
+    if (data) {
+      res.json({result: true, game : data})
+    } else {
+      res.json({result: false, error : 'game not found'})
+    }
+  })
 })
 
 
