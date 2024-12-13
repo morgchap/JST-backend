@@ -31,8 +31,7 @@ router.post("/addList", (req, res) => {
         return
       }
       
-      // if the user already have a list with this name, send an error
-      List.find({ user: userId, listName }).then(data => {
+      List.find({ user: userId, listName }).then( async (data) => {
         if(data.length !== 0){
           // if the user already have a list with this name, send an error
           res.status(400).json({ result: false, error: "List already in the database" })
@@ -45,14 +44,22 @@ router.post("/addList", (req, res) => {
             user: userId,
             gameList: [],
           })
-      
-          newList.save().then(data => {
+
+          // add the list in the database
+          await newList.save().then(data => {
             if(data){
               res.json({ result: true, list: data })
             } else {
               res.json({ result: false })
             }
           })
+
+          // add the list in the user's database
+          await List.findOne({ listName, user: userId }).then(data => {
+            User.updateOne({ _id: userId }, { $push: { lists: data._id } })
+              .then(data => console.log(data))
+          })
+
         }
       })
     })
@@ -147,6 +154,7 @@ router.post("/allgames", async (req, res) => {
     res.status(500).json({ result: false, error: "Something went wrong" });
   }
 });
+>>>>>>> f077c63f022dac42b03f41f5697b10c7c9e5fb2e
 
 
 module.exports = router;
