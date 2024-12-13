@@ -56,8 +56,6 @@ router.post("/addList", (req, res) => {
 
           // add the list in the user's database
           await List.findOne({ listName, user: userId }).then(data => {
-//console.log(data._id, userId)
-            //User.find({ _id: userId }).then(data => console.log(data))
             User.updateOne({ _id: userId }, { $push: { lists: data._id } })
               .then(data => console.log(data))
           })
@@ -168,6 +166,7 @@ router.delete("/:listName/:username", async (req, res) => {
       res.status(400).json({ result: false, error: "There is no list with that name." })
       return
     }
+
     // check if username is undefined
     if(!username){
       res.status(400).json({ result: false, error: "There is no username with that name." })
@@ -176,6 +175,7 @@ router.delete("/:listName/:username", async (req, res) => {
 
     const user = await User.findOne({ username });
     const list = await List.findOne({ user: user._id, listName })
+    
     // delete the list from the user collection (user.lists)
     await User.updateOne({ _id: user._id }, { $pull: {lists: list._id} })
     

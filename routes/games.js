@@ -45,7 +45,6 @@ router.post("/newgames", async (req, res, next) => {
 
 
 router.post("/addToList", async (req, res) => {
-  //const { cover, name, averageRating, summary, releaseDate, genre, studio } = req.body
   const { username, listName, gameName } = req.body
 
   // Check if the username is undefined
@@ -75,17 +74,17 @@ router.post("/addToList", async (req, res) => {
     return
   }
   const listId = list._id
-  
-  // Check if the game is in the database, if not save it in the database
-  let game = await Game.findOne({ gameName })
-  if(!game){
-    res.status(400).json({ result: false, error: "Your game is not in the database" })
-    return
-  }
-  const gameId = game._id
+
+// Check if the game is in the database, if not save it in the database
+let game = await Game.findOne({ name: gameName })
+if(!game){
+  res.status(400).json({ result: false, error: "Your game is not in the database" })
+  return
+}
+const gameId = game._id
   
   // Check if the game is already in the list
-  if(!list.gameList.includes(gameId)){
+  if(list.gameList.includes(gameId)){
     res.status(304).json({ result: false, error: "Your game is already in the list" })
     return
   }
@@ -98,6 +97,8 @@ router.post("/addToList", async (req, res) => {
 
   // add the list in the game's list's list
   await Game.updateOne({ _id: gameId }, { $addToSet: { lists: listId } } )
+
+  res.status(200).json({ result: true, message: "Your game has been succesfuly added to your list" })
 })
 
 
