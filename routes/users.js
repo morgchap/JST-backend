@@ -7,6 +7,9 @@ const { checkBody } = require('../modules/checkBody');
 const uid2 = require('uid2');
 const bcrypt = require('bcrypt');
 const List = require("../models/lists")
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
+
 
 //route post pour s'inscrire (avec vérif par checkBody) + création d'une collection 'all my games' :
 
@@ -140,6 +143,22 @@ router.post("/updatePassword", (req, res) => {
       }
     })
   } )
+
+})
+
+// route pour updater la liste d'amis
+
+
+router.put("/addFriend", (req, res) => {
+
+  User.updateOne({username: req.body.username}, {$addToSet: {"friendsList": req.body.id}})
+  .then(() => {
+    User.findOne({username: req.body.username})
+    .then(data => {
+        console.log(data);
+        res.json({result: true, data: data})
+    })
+}).catch(err => res.status(500).json({ result: false, error: err.message }));
 
 })
 

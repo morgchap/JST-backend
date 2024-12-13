@@ -158,7 +158,6 @@ router.post("/allgames", async (req, res) => {
 });
 
 
-<<<<<<< HEAD
 // delete the list
 router.delete("/:listName/:username", async (req, res) => {
   try{
@@ -188,7 +187,6 @@ router.delete("/:listName/:username", async (req, res) => {
   } catch(error) { console.log(error) }
 })
 
-=======
 // route get pour chopper une liste par son id
 
 router.get("/id/:id", (req, res) => {
@@ -196,6 +194,7 @@ router.get("/id/:id", (req, res) => {
   const { id } = req.params
   
   List.findById(id)
+  .populate('gameList')
   .then(data => {
     if (data) {
       res.json({result: true, data: data});
@@ -206,7 +205,6 @@ router.get("/id/:id", (req, res) => {
     
   })
 });
->>>>>>> 0d3ffb0e5886043c1bcf866e1dec9cc586728a2c
 
 
 module.exports = router;
