@@ -1,28 +1,13 @@
 const request = require('supertest');
-const app = require('../app');
-const { Comment, User, Game } = require('../models');
+const app = require('./app');
 
-describe('Comment API', () => {
-  it('should create a new comment', async () => {
-    const user = await User.create({ ... });
-    const game = await Game.create({ ... });
-
-    const newComment = {
-      userId: user._id,
-      gameId: game._id,
-      content: 'Très bon jeu !',
-      note: 5,
-    };
-
-    const res = await request(app)
-      .post('/comments')
-      .send(newComment);
-
-    expect(res.statusCode).toBe(201);
-    expect(res.body).toHaveProperty('_id');
-
-    const createdComment = await Comment.findById(res.body._id).populate('user game');
-    expect(createdComment.user._id).toEqual(user._id);
-    expect(createdComment.game._id).toEqual(game._id);
-  });
-});
+it('POST /comments', async () => {
+    const res = await request(app).post('/comments').send({
+        ratingsId: '675f250b560a83a903547eac',
+        userId: '675f243223fb7728fe63bcbd',
+        content: 'I love this game ',
+    });
+   
+    expect(res.statusCode).toBe(200);
+    expect(res.body.result).toBe(true);
+   });
