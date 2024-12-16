@@ -10,13 +10,16 @@ const ObjectId = mongoose.Types.ObjectId;
 
 router.post("/addFriend", (req, res) => {
 
-    Friend.findOne({sender: req.body.sender, receiver: req.body.receiver})
+    console.log((req.body));
+    
+
+    Friend.findOne({sender: new ObjectId(String(req.body.sender)), receiver: new ObjectId(String(req.body.receiver))})
     .then(data => {
         if (data === null) {
             //res.json({result : true, message : "pas de demande en cours"})
             const newFriend = new Friend({
-                sender: req.body.sender,
-                receiver: req.body.receiver,
+                sender: new ObjectId(String(req.body.sender)),
+                receiver: new ObjectId(String(req.body.receiver)),
                 status: "pending",
             
 
