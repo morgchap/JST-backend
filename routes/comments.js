@@ -9,7 +9,7 @@ require('../models/connection');
 
 // une route delete (jeremy)
 
-// une route pour ajouter un like (Morgane)
+// une post route pour ajouter un like (Morgane)
 
 // une route pour recuperer les commentaires d'un user
 
