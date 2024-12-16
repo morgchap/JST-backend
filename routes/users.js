@@ -1,7 +1,9 @@
 var express = require('express');
 var router = express.Router();
 require('../models/connection');
-
+const uniqid = require('uniqid');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
 const User = require('../models/users');
 const { checkBody } = require('../modules/checkBody');
 const uid2 = require('uid2');
@@ -161,6 +163,54 @@ router.put("/addFriend", (req, res) => {
 }).catch(err => res.status(500).json({ result: false, error: err.message }));
 
 })
+
+//pour ajouter la photo de profil 
+
+router.post("/updateAvatar", async (req, res) => {
+  try {
+    const photoPath = `./tmp/${uniqid()}.jpg`;
+
+    // Ensure the file exists
+    if (!req.files || !req.files.photoFromFront) {
+      return res.json({ result: false, error: "No file uploaded." });
+    }
+    
+    await req.files.photoFromFront.mv(photoPath);
+
+    // Upload the file to Cloudinary
+    const resultCloudinary = await cloudinary.uploader.upload(photoPath);
+
+    // Remove the file after uploading to Cloudinary
+    fs.unlinkSync(photoPath);
+
+    console.log(resultCloudinary.secure_url);
+
+    // Update the user's profile picture
+    const result = await User.updateOne(
+      { username: req.body.username },
+      { profilePicture: resultCloudinary.secure_url }
+    );
+
+    if (result.nModified > 0) {
+      return res.json({ result: true, url: resultCloudinary.secure_url });
+    } else {
+      return res.json({ result: false, error: "User not found or update failed." });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.json({ result: false, error: "An error occurred while updating the avatar." });
+  }
+});
+
+
+// route pour rechercher un user
+router.post("/search", async (req, res, next) => {
+  const pattern = new RegExp(`^${req.query.search}`, "i");
+  const userData = await User.find({ username: pattern }).lean();
+  console.log(userData)
+  //const games = gameData.sort();
+  res.json({ data: gameData });
+});
 
 
 
