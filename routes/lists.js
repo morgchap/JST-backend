@@ -206,4 +206,33 @@ router.get("/id/:id", (req, res) => {
 });
 
 
+router.get("/getGames/:listName/:username", async (req, res) => {
+  //console.log(req.params)
+  const { listName, username } = req.params
+  //const listName = "nul"
+  //const username = "jojo"
+  let listName2 = listName.replaceAll("_", " ")
+  const user = await User.findOne({ username });
+  const list = await List.findOne({ user: user._id, listName: listName2 })
+  //console.log(user, listName2)
+
+  if(!list){
+    res.status(400).json({ result: false, error: "There is no list with that name for this username." })
+    return
+  }
+
+  if(list.gameList.length === 0){
+    res.status(200).json({ result: false, error: "Your list is empty." })
+    return
+  }
+
+  let gamesInfo = []
+  for(let gameId of list.gameList){
+    let tmpGame = await Game.findById(gameId)
+    gamesInfo.push([tmpGame.name, tmpGame.cover])
+  }
+  res.json({ result: true, list: gamesInfo })
+})
+
+
 module.exports = router;
