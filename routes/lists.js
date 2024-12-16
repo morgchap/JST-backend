@@ -154,7 +154,7 @@ router.post("/allgames", async (req, res) => {
     res.status(500).json({ result: false, error: "Something went wrong" });
   }
 });
->>>>>>> f077c63f022dac42b03f41f5697b10c7c9e5fb2e
+
 
 
 module.exports = router;
