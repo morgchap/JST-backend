@@ -10,7 +10,9 @@ const uid2 = require('uid2');
 const bcrypt = require('bcrypt');
 const List = require("../models/lists")
 const mongoose = require("mongoose");
+const { upload } = require('../modules/cloudinary');
 const ObjectId = mongoose.Types.ObjectId;
+
 
 
 //route post pour s'inscrire (avec vérif par checkBody) + création d'une collection 'all my games' :
@@ -84,7 +86,7 @@ router.post('/signin', (req, res) => {
 
 // route get pour recuperer les infos du user 
 
-router.get('/:user', (req, res) => {
+router.get('/getOne/:user', (req, res) => {
   User.findOne({username : req.params.user}).then(data=>{
     if(data){
       res.json({result: true, infos: data})
@@ -166,50 +168,20 @@ router.put("/addFriend", (req, res) => {
 
 //pour ajouter la photo de profil 
 
-router.post("/updateAvatar", async (req, res) => {
-  try {
-    const photoPath = `./tmp/${uniqid()}.jpg`;
-
-    // Ensure the file exists
-    if (!req.files || !req.files.photoFromFront) {
-      return res.json({ result: false, error: "No file uploaded." });
-    }
-    
-    await req.files.photoFromFront.mv(photoPath);
-
-    // Upload the file to Cloudinary
-    const resultCloudinary = await cloudinary.uploader.upload(photoPath);
-
-    // Remove the file after uploading to Cloudinary
-    fs.unlinkSync(photoPath);
-
-    console.log(resultCloudinary.secure_url);
-
-    // Update the user's profile picture
-    const result = await User.updateOne(
-      { username: req.body.username },
-      { profilePicture: resultCloudinary.secure_url }
-    );
-
-    if (result.nModified > 0) {
-      return res.json({ result: true, url: resultCloudinary.secure_url });
-    } else {
-      return res.json({ result: false, error: "User not found or update failed." });
-    }
-  } catch (err) {
-    console.error(err);
-    return res.json({ result: false, error: "An error occurred while updating the avatar." });
-  }
+router.post("/updateAvatar", cloudinary, async  (req, res) => {
+ 
 });
 
 
 // route pour rechercher un user
-router.post("/search", async (req, res, next) => {
+router.get("/search", async (req, res, next) => {
+  console.log("coucou");
+  
   const pattern = new RegExp(`^${req.query.search}`, "i");
   const userData = await User.find({ username: pattern }).lean();
   console.log(userData)
-  //const games = gameData.sort();
-  res.json({ data: gameData });
+  const games = userData.sort();
+  res.json({data : games});
 });
 
 
