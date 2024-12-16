@@ -169,16 +169,23 @@ router.put("/addFriend", (req, res) => {
 
 //pour ajouter la photo de profil 
 
-/*
-router.post("/updateAvatar", cloudinary, async  (req, res) => {
- 
+router.post('/updateAvatar', upload, async (req, res, next) => {
+
+  console.log('Body:', req.body);
+  console.log('Files:', req.files);
+  
+await User.updateOne(
+      { username: req.body.username },
+      { profilePicture: req.files.cloudinary_url }
+  );
+
+  res.json({ result: true, profilePicture: req.files.cloudinary_url });
 });
-*/
 
 
 // route pour rechercher un user
 router.get("/search", async (req, res, next) => {
-  console.log("coucou");
+  //console.log("coucou");
   
   const pattern = new RegExp(`^${req.query.search}`, "i");
   const userData = await User.find({ username: pattern }).lean();
