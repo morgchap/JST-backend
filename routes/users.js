@@ -87,7 +87,8 @@ router.post('/signin', (req, res) => {
 // route get pour recuperer les infos du user 
 
 router.get('/getOne/:user', (req, res) => {
-  User.findOne({username : req.params.user}).then(data=>{
+  User.findOne({username : req.params.user}).populate("friendsList")
+  .then(data=> {
     if(data){
       res.json({result: true, infos: data})
     }
@@ -168,9 +169,11 @@ router.put("/addFriend", (req, res) => {
 
 //pour ajouter la photo de profil 
 
+/*
 router.post("/updateAvatar", cloudinary, async  (req, res) => {
  
 });
+*/
 
 
 // route pour rechercher un user

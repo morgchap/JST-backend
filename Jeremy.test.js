@@ -13,3 +13,4 @@ it('DELETE /comments', async () => {
  expect(res.statusCode).toBe(200);
  expect(res.body.stock).toBe(true);
 });
+
