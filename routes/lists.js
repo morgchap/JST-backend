@@ -157,4 +157,53 @@ router.post("/allgames", async (req, res) => {
 
 
 
+// delete the list
+router.delete("/:listName/:username", async (req, res) => {
+  try{
+    const { listName, username } = req.params
+
+    // check if listName is undefined
+    if(!listName){
+      res.status(400).json({ result: false, error: "There is no list with that name." })
+      return
+    }
+    // check if username is undefined
+    if(!username){
+      res.status(400).json({ result: false, error: "There is no username with that name." })
+      return
+    }
+
+    const user = await User.findOne({ username });
+    const list = await List.findOne({ user: user._id, listName })
+    // delete the list from the user collection (user.lists)
+    await User.updateOne({ _id: user._id }, { $pull: {lists: list._id} })
+    
+    // delete the list from the List collection
+    await List.deleteOne({ _id: list._id })
+
+    res.json({ result: true })
+
+  } catch(error) { console.log(error) }
+})
+
+// route get pour chopper une liste par son id
+
+router.get("/id/:id", (req, res) => {
+
+  const { id } = req.params
+  
+  List.findById(id)
+  .populate('gameList')
+  .then(data => {
+    if (data) {
+      res.json({result: true, data: data});
+      console.log(data);
+    } else {
+      res.json({ result: false, error: 'no lists found' });
+    }
+    
+  })
+});
+
+
 module.exports = router;

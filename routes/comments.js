@@ -3,10 +3,15 @@ var router = express.Router();
 require('../models/connection');
 
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+//une route pour créer un commentaire (LOU)
+
+// une route pour recupere les commentaire d'un avis (Nicolas)
+
+// une route delete (jeremy)
+
+// une post route pour ajouter un like (Morgane)
+
+// une route pour recuperer les commentaires d'un user
 
 module.exports = router;
 

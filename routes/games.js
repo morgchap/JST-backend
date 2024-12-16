@@ -9,8 +9,8 @@ const User = require('../models/users')
 // get games from search bar
 router.get("/fromsearch", async (req, res, next) => {
   const pattern = new RegExp(`^${req.query.search}`, "i");
-  const racesData = await Game.find({ name: pattern }).lean();
-  const games = racesData.sort();
+  const gameData = await Game.find({ name: pattern }).lean();
+  const games = gameData.sort();
   res.json({ data: games });
 });
 
