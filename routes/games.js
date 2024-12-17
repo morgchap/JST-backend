@@ -115,4 +115,55 @@ router.post('/byname', (req, res) => {
 })
 
 
+// Delete a game from a list
+router.delete("/:listName/:gameName/:username", async (req, res) => {
+  try {
+    const { listName, gameName, username } = req.params
+
+    if(!listName){
+      res.status(400).json({ result: false, error: "There is no list with that name." })
+      return
+    }
+    let listName2 = listName.replaceAll("_", " ")
+    if(!gameName){
+      res.status(400).json({ result: false, error: "There is no game with that name." })
+      return
+    }
+
+    const user = await User.findOne({ username });
+    const list = await List.findOne({ user: user._id, listName: listName2 })
+    const game = await Game.findOne({ name: gameName })
+
+    // verifie, lorsque listName est "All my games", si le jeu est d'autre d'autre liste
+    /*if(listName2 === "All my games"){
+      const listCheck = await List.find({ user: user._id })
+      let check = true
+      for(let game of listCheck){
+        for(let gameId of game.gameList){
+          if(gameId === game._id && check){
+            res.json({ result: false, error: "The game is in another list" })
+            check = false
+            break
+          }
+        }
+      }
+      if(check){
+        // update la list de list qui comprend le jeu
+        await Game.updateOne({ name: gameName } ,{ $pull: {lists: list._id} })
+        // update la list pour retirer le jeu
+        await List.updateOne({ listName: listName2, user: user._id } ,{ $pull: {gameList: game._id} })
+      }
+    } else {*/
+      // update la list de list qui comprend le jeu
+      await Game.updateOne({ name: gameName } ,{ $pull: {lists: list._id} })
+      // update la list pour retirer le jeu
+      await List.updateOne({ listName: listName2, user: user._id } ,{ $pull: {gameList: game._id} })
+      
+      res.json({ result: true })
+    //}
+
+  } catch(error) { console.log(error) }
+})
+
+
 module.exports = router;
