@@ -58,13 +58,48 @@ router.get('/bygame/:game', (req, res) => {
 
 
 
-// route get pour avoir les avis des amis d'un user 
+// route post pour avoir les avis des amis d'un user 
 
 router.post('/friendsreview', async (req, res) => {
   const Users = await User.findOne({username: req.body.username}).populate('friendsList')
-  const Friend = await Users.friendsList.populate('ratingsID')
-  res.json({result:true, ratings: Friend})
+  //const Friend = await Users.friendsList.populate('ratingsID')
+  let reviews = []
+  for (let data of Users.friendsList){
+   let result = await data.populate('ratingsID')
+   //console.log(result.ratingsID)
+    reviews.push(result.ratingsID)
+  }
 
+  res.json({result:true, ratings: reviews})
+})
+
+// route post pour avoir les avis des mes amis pour un jeu
+
+router.post('/friendsreview/bygame', async (req, res) => {
+  const Users = await User.findOne({username: req.body.username}).populate('friendsList')
+  const Games = await Game.findOne({name: req.body.gameName})
+  console.log(Games)
+  //const Friend = await Users.friendsList.populate('ratingsID')
+  let reviews = []
+  for (let friend of Users.friendsList){
+    await friend.populate({
+      path: 'ratingsID',
+      populate: { path: 'game', model: 'games' }, // Populate the 'game' field inside 'ratingsID'
+    });
+    const friendRatings = friend.ratingsID.filter(
+      (rating) => rating.game && rating.game._id.toString() === Games._id.toString()
+    );
+
+    if (friendRatings.length > 0) {
+      reviews.push({
+        friendUsername: friend.username,
+        ratings: friendRatings,
+      });
+    }
+  }
+
+
+  res.json({result:true, ratings: reviews})
 })
 
 
