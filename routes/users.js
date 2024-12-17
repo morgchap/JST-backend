@@ -77,7 +77,7 @@ router.post('/signin', (req, res) => {
 
   User.findOne({ username: req.body.username }).then(data => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token, username: data.username });
+      res.json({ result: true, token: data.token, username: data.username, userId: data._id });
     } else {
       res.json({ result: false, error: 'User not found or wrong password' });
     }
@@ -193,6 +193,14 @@ router.get("/search", async (req, res, next) => {
   const games = userData.sort();
   res.json({data : games});
 });
+
+// route pour avoir tous les user
+
+router.get('/getall', (req, res)=> {
+  User.find().then(response=>{
+    res.json({response: true, result:response})
+  })
+})
 
 
 
