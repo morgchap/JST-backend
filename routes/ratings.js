@@ -32,7 +32,12 @@ res.json({result : true, ratings: savedReview})
 // route get poour avoir les avis d'1 user
 router.get('/byuser/:username', (req, res) => {
 
-  User.findOne({username: req.params.username}).populate('ratingsID').then(data => {
+  User.findOne({username: req.params.username}).populate({
+    path: 'ratingsID', // Populate the ratings
+    populate: {
+      path: 'game writtenOpinion', // Populate the 'game' field inside 'ratingsID'
+    },
+  }).then(data => {
     if (data){
       res.json({result : true, ratings: data.ratingsID})
     } else {
@@ -178,49 +183,24 @@ router.post('/friendsreview/bygame', async (req, res) => {
   res.json({result:true, ratings: reviews})
 })
 
-router.get('/all', async(req, res)=> {
+//route pour liker une review et l'enregistrer en BDD
 
-  const result =  await Ratings.aggregate(
-    [
-      {
-        $lookup: {
-          from: "games",
-          localField: "game",
-          foreignField: "_id",
-          as: "game"
-        }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user"
-        }
-      },
-      {
-        $project: {
-          username: {
-            $first: "$user.username"
-          },
-          profilePicture: {
-            $first: "$user.profilePicture"
-          },
-          note: 1,
-          writtenOpinion: 1,
-          nbLikes: {
-            $size: "$likesNumber"
-          },
-          nbDislikes: {
-            $size: "$likesNumber"
-          }
-        }
-      }
-    ]
-  )
+router.put("/likeAReview", (req, res) => {
 
-  res.json({result: true, data: result})
+  Ratings.updateOne({_id: new ObjectId(req.body.ratingId)}, {likesNumber: new ObjectId(req.body.userId)})
+  .then(data => {
+
+    if (data) {
+    console.log(data);
+    res.json({result: true, data: data})
+    } else {
+      res.json({result: false, message: "le nombre de like n'a pas pu être modifié"})
+    }
+
+  })
+
 })
+
 
 
 
