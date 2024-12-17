@@ -194,6 +194,14 @@ router.get("/search", async (req, res, next) => {
   res.json({data : games});
 });
 
+// route pour avoir tous les user
+
+router.get('/getall', (req, res)=> {
+  User.find().then(response=>{
+    res.json({response: true, result:response})
+  })
+})
+
 
 
 module.exports = router;
