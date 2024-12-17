@@ -63,14 +63,57 @@ router.get('/bygame/:game', (req, res) => {
 // route post pour avoir les avis des amis d'un user 
 
 router.post('/friendsreview', async (req, res) => {
-  const Users = await User.findOne({username: req.body.username}).populate('friendsList')
-  //const Friend = await Users.friendsList.populate('ratingsID')
-  let reviews = []
-  for (let data of Users.friendsList){
-   let result = await data.populate('ratingsID')
-   //console.log(result.ratingsID)
-    reviews.push(result.ratingsID)
-  }
+  const { friendsList = [] } = await User.findOne({username: req.body.username}).select('friendsList').lean()
+  
+  const reviews = await Ratings.aggregate([
+    {
+      $match: {
+        user: {
+          $in: friendsList
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: "games",
+        localField: "game",
+        foreignField: "_id",
+        as: "game"
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    {
+      $project: {
+        gameName: {
+          $first: "$game.name"
+        },
+        gameCover: {
+          $first: "$game.cover"
+        },
+        username: {
+          $first: "$user.username"
+        },
+        profilePicture: {
+          $first: "$user.profilePicture"
+        },
+        note: 1,
+        writtenOpinion: 1,
+        nbLikes: {
+          $size: "$likesNumber"
+        },
+        nbDislikes: {
+          $size: "$likesNumber"
+        }
+      }
+    }
+  ])
 
   res.json({result:true, ratings: reviews})
 })
@@ -78,50 +121,106 @@ router.post('/friendsreview', async (req, res) => {
 // route post pour avoir les avis des mes amis pour un jeu
 
 router.post('/friendsreview/bygame', async (req, res) => {
-  const Users = await User.findOne({username: req.body.username}).populate('friendsList')
-  const Games = await Game.findOne({name: req.body.gameName})
-  console.log(Games)
-  //const Friend = await Users.friendsList.populate('ratingsID')
-  let reviews = []
-  for (let friend of Users.friendsList){
-    await friend.populate({
-      path: 'ratingsID',
-      populate: { path: 'game', model: 'games' }, // Populate the 'game' field inside 'ratingsID'
-    });
-    const friendRatings = friend.ratingsID.filter(
-      (rating) => rating.game && rating.game._id.toString() === Games._id.toString()
-    );
-
-    if (friendRatings.length > 0) {
-      reviews.push({
-        friendUsername: friend.username,
-        ratings: friendRatings,
-      });
-    }
-  }
-
+  const { friendsList = [] } = await User.findOne({username: req.body.username}).select('friendsList').lean()
+  const gameid = await Game.findOne({ name: req.body.name })
+  //console.log(gameid)
+  const reviews = await Ratings.aggregate(
+    [
+      {
+        $match: {
+          user: {
+            $in: friendsList
+          }
+        }
+      },
+      {
+        $match: {
+          game: gameid._id
+        }
+      },
+      {
+        $lookup: {
+          from: "games",
+          localField: "game",
+          foreignField: "_id",
+          as: "game"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      {
+        $project: {
+          username: {
+            $first: "$user.username"
+          },
+          profilePicture: {
+            $first: "$user.profilePicture"
+          },
+          note: 1,
+          writtenOpinion: 1,
+          nbLikes: {
+            $size: "$likesNumber"
+          },
+          nbDislikes: {
+            $size: "$likesNumber"
+          }
+        }
+      }
+    ]
+  )
 
   res.json({result:true, ratings: reviews})
 })
 
-//route pour liker une review et l'enregistrer en BDD
+router.get('/all', async(req, res)=> {
 
-router.put("/likeAReview", (req, res) => {
+  const result =  await Ratings.aggregate(
+    [
+      {
+        $lookup: {
+          from: "games",
+          localField: "game",
+          foreignField: "_id",
+          as: "game"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      {
+        $project: {
+          username: {
+            $first: "$user.username"
+          },
+          profilePicture: {
+            $first: "$user.profilePicture"
+          },
+          note: 1,
+          writtenOpinion: 1,
+          nbLikes: {
+            $size: "$likesNumber"
+          },
+          nbDislikes: {
+            $size: "$likesNumber"
+          }
+        }
+      }
+    ]
+  )
 
-  Ratings.updateOne({_id: new ObjectId(req.body.ratingId)}, {likesNumber: new ObjectId(req.body.userId)})
-  .then(data => {
-
-    if (data) {
-    console.log(data);
-    res.json({result: true, data: data})
-    } else {
-      res.json({result: false, message: "le nombre de like n'a pas pu être modifié"})
-    }
-
-  })
-
+  res.json({result: true, data: result})
 })
-
 
 
 
