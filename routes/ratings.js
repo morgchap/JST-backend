@@ -32,7 +32,12 @@ res.json({result : true, ratings: savedReview})
 // route get poour avoir les avis d'1 user
 router.get('/byuser/:username', (req, res) => {
 
-  User.findOne({username: req.params.username}).populate('ratingsID').then(data => {
+  User.findOne({username: req.params.username}).populate({
+    path: 'ratingsID', // Populate the ratings
+    populate: {
+      path: 'game writtenOpinion', // Populate the 'game' field inside 'ratingsID'
+    },
+  }).then(data => {
     if (data){
       res.json({result : true, ratings: data.ratingsID})
     } else {
@@ -71,21 +76,34 @@ router.post('/friendsreview', async (req, res) => {
 
 //route pour liker une review et l'enregistrer en BDD
 
-router.put("/likeAReview", (req, res) => {
+router.put("/likeOrDislikeAReview", async (req, res) => {
+  try {
+    // Vérifiez si la note existe et si l'utilisateur a déjà liké
+    const rating = await Ratings.findOne({
+      _id: new ObjectId(req.body.ratingId),
+      likesNumber: { $elemMatch: { $eq: req.body.userId } }, // Vérifie si userId est déjà dans likesNumber
+    });
 
-  Ratings.updateOne({_id: new ObjectId(req.body.ratingId)}, {likesNumber: new ObjectId(req.body.userId)})
-  .then(data => {
-
-    if (data) {
-    console.log(data);
-    res.json({result: true, data: data})
+    if (rating) {
+      // Si l'utilisateur a déjà liké, retirez le like
+      const result = await Ratings.updateOne(
+        { _id: new ObjectId(req.body.ratingId) },
+        { $pull: { likesNumber: req.body.userId } }
+      );
+      return res.json({ result: true, message: "Like retiré", data: result });
     } else {
-      res.json({result: false, message: "le nombre de like n'a pas pu être modifié"})
+      // Si l'utilisateur n'a pas encore liké, ajoutez le like
+      const result = await Ratings.updateOne(
+        { _id: new ObjectId(req.body.ratingId) },
+        { $addToSet: { likesNumber: req.body.userId } }
+      );
+      return res.json({ result: true, message: "Like ajouté", data: result });
     }
-
-  })
-
-})
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ result: false, message: "Erreur serveur", error: err.message });
+  }
+});
 
 
 
