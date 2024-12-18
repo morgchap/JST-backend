@@ -113,9 +113,9 @@ router.post('/friendsreview', async (req, res) => {
         nbLikes: {
           $size: "$likesNumber"
         },
-        nbDislikes: {
-          $size: "$likesNumber"
-        }
+        likesCounter: {
+          $ifNull: ["$likesNumber", []]
+        },
       }
     }
   ])
@@ -169,12 +169,12 @@ router.post('/friendsreview/bygame', async (req, res) => {
           },
           note: 1,
           writtenOpinion: 1,
+          likesCounter: {
+            $ifNull: ["$likesNumber", []]
+          },
           nbLikes: {
             $size: "$likesNumber"
           },
-          nbDislikes: {
-            $size: "$likesNumber"
-          }
         }
       }
     ]
@@ -254,11 +254,11 @@ router.get('/all', async (req, res) => {
           note: 1,
           writtenOpinion: 1,
           nbLikes: {
-            $size: "$likesNumber"
+            $first: "$game.likesNumber"
           },
-          nbDislikes: {
-            $size: "$likesNumber"
-          }
+          likesCounter: {
+            $ifNull: ["$likesNumber", []]
+          },
         }
       }
     ]
