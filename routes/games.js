@@ -125,6 +125,7 @@ router.delete("/:listName/:gameName/:username", async (req, res) => {
       return
     }
     let listName2 = listName.replaceAll("_", " ")
+
     if(!gameName){
       res.status(400).json({ result: false, error: "There is no game with that name." })
       return
@@ -134,33 +135,44 @@ router.delete("/:listName/:gameName/:username", async (req, res) => {
     const list = await List.findOne({ user: user._id, listName: listName2 })
     const game = await Game.findOne({ name: gameName })
 
-    // verifie, lorsque listName est "All my games", si le jeu est d'autre d'autre liste
-    /*if(listName2 === "All my games"){
+    // check, while listName is "All my games", if the game is in another list
+    if(listName2 === "All my games"){
+console.log(listName2)
       const listCheck = await List.find({ user: user._id })
       let check = true
-      for(let game of listCheck){
-        for(let gameId of game.gameList){
-          if(gameId === game._id && check){
-            res.json({ result: false, error: "The game is in another list" })
-            check = false
-            break
+      // check in every list except for "All my games" 
+      for(let games of listCheck){
+        // if the list is "All my games", don't check anything
+        if(!(games.listName === listName2)){
+          for(let gameId of games.gameList){
+//console.log(gameId, game._id)
+//console.log(gameId.equals(game._id))
+            if((gameId.equals(game._id)) && check){
+console.log(gameId, game._id)
+              res.json({ result: false, error: "The game is in another list" })
+              check = false
+              break
+            }
           }
         }
       }
+console.log("check", check)
       if(check){
         // update la list de list qui comprend le jeu
         await Game.updateOne({ name: gameName } ,{ $pull: {lists: list._id} })
         // update la list pour retirer le jeu
         await List.updateOne({ listName: listName2, user: user._id } ,{ $pull: {gameList: game._id} })
+
+        res.json({ result: true })
       }
-    } else {*/
+    } else {
       // update la list de list qui comprend le jeu
       await Game.updateOne({ name: gameName } ,{ $pull: {lists: list._id} })
       // update la list pour retirer le jeu
       await List.updateOne({ listName: listName2, user: user._id } ,{ $pull: {gameList: game._id} })
       
       res.json({ result: true })
-    //}
+    }
 
   } catch(error) { console.log(error) }
 })
