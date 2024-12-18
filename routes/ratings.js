@@ -201,6 +201,55 @@ router.put("/likeAReview", (req, res) => {
 
 })
 
+//recuperer tous les avis
+
+router.get('/all', async (req, res) => {
+
+  const reviews = await Ratings.aggregate([
+       { $lookup: {
+          from: "games",
+          localField: "game",
+          foreignField: "_id",
+          as: "game"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      {
+        $project: {
+          gameName: {
+            $first: "$game.name"
+          },
+          gameCover: {
+            $first: "$game.cover"
+          },
+          username: {
+            $first: "$user.username"
+          },
+          profilePicture: {
+            $first: "$user.profilePicture"
+          },
+          note: 1,
+          writtenOpinion: 1,
+          nbLikes: {
+            $size: "$likesNumber"
+          },
+          nbDislikes: {
+            $size: "$likesNumber"
+          }
+        }
+      }
+    ]
+  )
+
+  res.json({result:true, ratings: reviews})
+})
 
 
 
