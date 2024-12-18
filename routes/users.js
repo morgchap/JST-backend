@@ -170,16 +170,42 @@ router.put("/addFriend", (req, res) => {
 //pour ajouter la photo de profil 
 
 router.post('/updateAvatar', upload, async (req, res, next) => {
+  try {
+    // Vérifier que les données nécessaires sont présentes
+    if (!req.body.username || !req.files || !req.files.cloudinary_url) {
+      return res.status(400).json({ 
+        result: false, 
+        error: "Missing required fields: username or profile picture" 
+      });
+    }
 
-  console.log('Body:', req.body);
-  console.log('Files:', req.files);
-  
-await User.updateOne(
+    console.log('Body:', req.body);
+    console.log('Files:', req.files);
+
+    // Mettre à jour l'utilisateur
+    const updateResult = await User.updateOne(
       { username: req.body.username },
       { profilePicture: req.files.cloudinary_url }
-  );
+    );
 
-  res.json({ result: true, profilePicture: req.files.cloudinary_url });
+    // Vérifier si l'utilisateur a été trouvé et mis à jour
+    if (updateResult.nModified === 0) {
+      return res.status(404).json({ 
+        result: false, 
+        error: "User not found or no changes made" 
+      });
+    }
+
+    // Réponse en cas de succès
+    res.json({ result: true, profilePicture: req.files.cloudinary_url });
+
+  } catch (error) {
+    console.error('Error in /updateAvatar route:', error);
+    res.status(500).json({ 
+      result: false, 
+      error: "An internal server error occurred" 
+    });
+  }
 });
 
 
