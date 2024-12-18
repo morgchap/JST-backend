@@ -113,9 +113,9 @@ router.post('/friendsreview', async (req, res) => {
         nbLikes: {
           $size: "$likesNumber"
         },
-        nbDislikes: {
-          $size: "$likesNumber"
-        }
+        likesCounter: {
+          $ifNull: ["$likesNumber", []]
+        },
       }
     }
   ])
@@ -169,12 +169,12 @@ router.post('/friendsreview/bygame', async (req, res) => {
           },
           note: 1,
           writtenOpinion: 1,
+          likesCounter: {
+            $ifNull: ["$likesNumber", []]
+          },
           nbLikes: {
             $size: "$likesNumber"
           },
-          nbDislikes: {
-            $size: "$likesNumber"
-          }
         }
       }
     ]
@@ -183,24 +183,89 @@ router.post('/friendsreview/bygame', async (req, res) => {
   res.json({result:true, ratings: reviews})
 })
 
+
 //route pour liker une review et l'enregistrer en BDD
 
-router.put("/likeAReview", (req, res) => {
 
-  Ratings.updateOne({_id: new ObjectId(req.body.ratingId)}, {likesNumber: new ObjectId(req.body.userId)})
-  .then(data => {
+router.put("/likeOrDislikeAReview", async (req, res) => {
+  try {
+    // Vérifiez si la note existe et si l'utilisateur a déjà liké
+    const rating = await Ratings.findOne({
+      _id: new ObjectId(req.body.ratingId),
+      likesNumber: { $elemMatch: { $eq: req.body.userId } }, // Vérifie si userId est déjà dans likesNumber
+    });
 
-    if (data) {
-    console.log(data);
-    res.json({result: true, data: data})
+    if (rating) {
+      // Si l'utilisateur a déjà liké, retirez le like
+      const result = await Ratings.updateOne(
+        { _id: new ObjectId(req.body.ratingId) },
+        { $pull: { likesNumber: req.body.userId } }
+      );
+      return res.json({ result: true, message: "Like retiré", data: result });
     } else {
-      res.json({result: false, message: "le nombre de like n'a pas pu être modifié"})
+      // Si l'utilisateur n'a pas encore liké, ajoutez le like
+      const result = await Ratings.updateOne(
+        { _id: new ObjectId(req.body.ratingId) },
+        { $addToSet: { likesNumber: req.body.userId } }
+      );
+      return res.json({ result: true, message: "Like ajouté", data: result });
     }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ result: false, message: "Erreur serveur", error: err.message });
+  }
+});
 
-  })
 
+//recuperer tous les avis
+
+router.get('/all', async (req, res) => {
+
+  const reviews = await Ratings.aggregate([
+       { $lookup: {
+          from: "games",
+          localField: "game",
+          foreignField: "_id",
+          as: "game"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      {
+        $project: {
+          gameName: {
+            $first: "$game.name"
+          },
+          gameCover: {
+            $first: "$game.cover"
+          },
+          username: {
+            $first: "$user.username"
+          },
+          profilePicture: {
+            $first: "$user.profilePicture"
+          },
+          note: 1,
+          writtenOpinion: 1,
+          nbLikes: {
+            $first: "$game.likesNumber"
+          },
+          likesCounter: {
+            $ifNull: ["$likesNumber", []]
+          },
+        }
+      }
+    ]
+  )
+
+  res.json({result:true, ratings: reviews})
 })
-
 
 
 
