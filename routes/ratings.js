@@ -29,7 +29,7 @@ res.json({result : true, ratings: savedReview})
 })
 
 
-// route get poour avoir les avis d'1 user
+// route get pour avoir les avis d'1 user
 router.get('/byuser/:username', (req, res) => {
 
   User.findOne({username: req.params.username}).populate({
