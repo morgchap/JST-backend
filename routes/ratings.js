@@ -39,7 +39,7 @@ router.get('/byuser/:username', (req, res) => {
     },
   }).then(data => {
     if (data){
-      res.json({result : true, ratings: data.ratingsID})
+      res.json({result : true, ratings: data})
     } else {
       res.json({result : false, error:'user not found'})
     }
