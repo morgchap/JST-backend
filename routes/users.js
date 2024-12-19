@@ -95,6 +95,20 @@ router.get('/getOne/:user', (req, res) => {
   })
 })
 
+
+// route get qui recupere la liste des amies
+
+router.get("/getFriendList/:user", (req, res) => {
+  User.findOne({username : req.params.user})
+    .then(data => {
+      if(data){
+        res.json({ result: true, list: data })
+      } else {
+        res.json({ result: true, list: [] })
+      }
+    })
+})
+
 // route post pour updater le username
 
 router.post("/updateUsername", (req, res) => {
