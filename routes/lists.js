@@ -5,10 +5,6 @@ const List = require("../models/lists")
 const Game = require("../models/games")
 const User = require('../models/users')
 
-/* GET users listing. */
-/*router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});*/
 
 // create a list
 router.post("/addList", (req, res) => {
@@ -72,7 +68,7 @@ router.get("/:username", (req, res) => {
   try{
     const { username } = req.params
 
-    // check if idUser is undefined
+    // check if username is undefined
     if(!username){
       res.status(400).json({ result: false, error: "username is undefined" })
       return
@@ -80,11 +76,12 @@ router.get("/:username", (req, res) => {
 
     // you need to fetch in the user collection to get the id of the user
     User.findOne({ username }).then(data => {
-      // check if username is undefined
+      // check if something is fetch from the database
       if(!data){
         res.status(400).json({ result: false, error: "Didn't find the user in the database" })
         return
       }
+      // get the user's lists from the database
       List.find({ user: data._id }).then(data => {
         if(data.length === 0){
           // if the user don't have any list
@@ -101,20 +98,19 @@ router.get("/:username", (req, res) => {
 })
 
 
-// route pour ajouter un jeux a la collection 'tout mes jeux' lorsque l'uitilisateur oimporte ses jeux a la création de son compte
-
+// to add a game in the list "All my Games" when the user import his game while creating his account
 router.post("/allgames", async (req, res) => {
   try {
     const userinfo = await User.findOne({ username: req.body.username });
 
+    // check if something is fetch from the database
     if (!userinfo) {
-      return res.status(400).json({ result: false, error: "user is undefined" });
+      return res.status(400).json({ result: false, error: "Didn't find the user in the database" });
     }
-
     const userId = userinfo._id;
 
     const list = await List.findOne({ user: userId, listName: 'All my games' });
-
+    // check if something is fetch from the database
     if (!list) {
       return res.status(400).json({ result: false, error: "User's game list not found" });
     }
@@ -134,7 +130,6 @@ router.post("/allgames", async (req, res) => {
         studio: req.body.studio,
         lists: list._id, // Add to the game list
       });
-
       // Save the new game
       game = await game.save();
     } else {
@@ -175,6 +170,7 @@ router.delete("/:listName/:username", async (req, res) => {
 
     const user = await User.findOne({ username });
     const list = await List.findOne({ user: user._id, listName })
+
     // delete the list from the user collection (user.lists)
     await User.updateOne({ _id: user._id }, { $pull: {lists: list._id} })
     
@@ -186,46 +182,42 @@ router.delete("/:listName/:username", async (req, res) => {
   } catch(error) { console.log(error) }
 })
 
-// route get pour chopper une liste par son id
-
+// get a list by is id
 router.get("/id/:id", (req, res) => {
 
   const { id } = req.params
   
   List.findById(id)
-  .populate('gameList')
-  .then(data => {
-    if (data) {
-      res.json({result: true, data: data});
-      console.log(data);
-    } else {
-      res.json({ result: false, error: 'no lists found' });
-    }
+    .populate('gameList')
+    .then(data => {
+      if (data) {
+        res.json({result: true, data: data});
+      } else {
+        res.json({ result: false, error: 'no lists found' });
+      }
     
   })
 });
 
-
+// get a specific list for a username
 router.get("/getGames/:listName/:username", async (req, res) => {
-  //console.log(req.params)
   const { listName, username } = req.params
-  //const listName = "nul"
-  //const username = "jojo"
   let listName2 = listName.replaceAll("_", " ")
   const user = await User.findOne({ username });
   const list = await List.findOne({ user: user._id, listName: listName2 })
-  //console.log(user, listName2)
 
+  // check if the list is fetch
   if(!list){
     res.status(400).json({ result: false, error: "There is no list with that name for this username." })
     return
   }
-
+  // particular case if the list is empty
   if(list.gameList.length === 0){
     res.status(200).json({ result: false, error: "Your list is empty." })
     return
   }
 
+  // create a list with only the name and the cover of games to send them to the front
   let gamesInfo = []
   for(let gameId of list.gameList){
     let tmpGame = await Game.findById(gameId)
