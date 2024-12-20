@@ -3,9 +3,7 @@ const fs = require("fs")
 const uniqid = require("uniqid")
 
 async function upload(req, res, next) {
-  console.log("coucou");
   
-  //console.log(req.files.photoFromFront)
   if (!req.files?.photoFromFront) {
     return next()
   }

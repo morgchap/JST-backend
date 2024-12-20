@@ -8,6 +8,7 @@ const User = require('../models/users')
 
 // get games from search bar
 router.get("/fromsearch", async (req, res, next) => {
+  // regex qui permet de chercher dans la bdd ce qui commence par la recherche
   const pattern = new RegExp(`^${req.query.search}`, "i");
   const gameData = await Game.find({ name: pattern }).lean();
   const games = gameData.sort();

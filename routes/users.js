@@ -40,7 +40,7 @@ router.post('/signup', (req, res) => {
         
       });
       newUser.save().then(userfound => {
-        //res.json({ result: true, token: newDoc.token, username: newDoc.username });
+
         // création d'une nouvelle list
         const newList = new List({
           isPublic: false,
@@ -48,7 +48,7 @@ router.post('/signup', (req, res) => {
           user: userfound._id,
         }); 
         newList.save().then(data=>{
-          //res.json({ result: true, id: data._id });
+          
           // ajout de cette nouvelle list au user 
           User.updateOne(
             { username: userfound.username }, 
@@ -56,7 +56,7 @@ router.post('/signup', (req, res) => {
               $push: { "lists": data._id } 
             }
           ).then(newDoc => {
-            res.json({ result: true, lists: newDoc.lists, token: userfound.token, username: userfound.username})
+            res.json({ result: true, lists: newDoc.lists, token: userfound.token, username: userfound.username, userId: data._id})
         })
 })
       });
@@ -169,7 +169,7 @@ router.post("/updatePassword", (req, res) => {
 
 
 router.put("/addFriend", (req, res) => {
-
+// push l'id du friend dans la liste d'amis du user
   User.updateOne({username: req.body.username}, {$addToSet: {"friendsList": req.body.id}})
   .then(() => {
     User.findOne({username: req.body.username})
@@ -192,9 +192,6 @@ router.post('/updateAvatar', upload, async (req, res, next) => {
         error: "Missing required fields: username or profile picture" 
       });
     }
-
-    console.log('Body:', req.body);
-    console.log('Files:', req.files);
 
     // Mettre à jour l'utilisateur
     const updateResult = await User.updateOne(
@@ -225,11 +222,10 @@ router.post('/updateAvatar', upload, async (req, res, next) => {
 
 // route pour rechercher un user
 router.get("/search", async (req, res, next) => {
-  //console.log("coucou");
-  
+  // regex qui retourne ce que le user cherche dans la barre de recherche
   const pattern = new RegExp(`^${req.query.search}`, "i");
+
   const userData = await User.find({ username: pattern }).lean();
-  console.log(userData)
   const games = userData.sort();
   res.json({data : games});
 });

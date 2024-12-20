@@ -1,3 +1,4 @@
+// verifie qu'il n'y a pas de champs vide ou nul 
 function checkBody(body, keys) {
     let isValid = true;
   
