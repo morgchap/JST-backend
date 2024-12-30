@@ -1,191 +1,199 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-require('../models/connection');
-const Ratings = require('../models/ratings')
-const User = require('../models/users');
-const Game = require ('../models/games')
+require("../models/connection");
+const Ratings = require("../models/ratings");
+const User = require("../models/users");
+const Game = require("../models/games");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 
+// créer un nouvel avis et le pusher dans les collection User et Game
+router.post("/newreview", async (req, res) => {
+  // get the gameId from its name
+  const Games = await Game.findOne({ name: req.body.name });
+  // get the userId from its username
+  const Users = await User.findOne({ username: req.body.username });
+  //create new ratings
+  const newRatings = new Ratings({
+    game: Games._id,
+    user: Users._id,
+    writtenOpinion: req.body.reviewcontent,
+    note: req.body.note,
+  });
+  //save the rating
+  const savedReview = await newRatings.save();
+  //push the ratings id in the ratingsId fields in the User collection
+  await User.updateOne(
+    { username: req.body.username },
+    { $push: { ratingsID: savedReview._id } }
+  );
+  //push the ratings id in the userOpinion fields in the Game collection
+  await Game.updateOne(
+    { name: req.body.name },
+    { $push: { userOpinion: savedReview._id } }
+  );
 
-// créer un nouvel avis 
-router.post('/newreview', async (req, res) => {
- const Games = await Game.findOne({name : req.body.name}) 
- const Users = await User.findOne({username: req.body.username})
-
-const newRatings = new Ratings({
-  game : Games._id,
-  user : Users._id,
-  writtenOpinion: req.body.reviewcontent,
-  note:req.body.note, 
-})
-const savedReview = await newRatings.save()
-
-await User.updateOne({username : req.body.username}, {$push:{'ratingsID': savedReview._id}})
-
-await Game.updateOne({name : req.body.name}, {$push:{'userOpinion': savedReview._id}})
-
-res.json({result : true, ratings: savedReview})
-})
-
+  res.json({ result: true, ratings: savedReview });
+});
 
 // route get pour avoir les avis d'1 user
-router.get('/byuser/:username', (req, res) => {
+router.get("/byuser/:username", (req, res) => {
+  User.findOne({ username: req.params.username })
+    .populate({
+      path: "ratingsID", // Populate the ratings
+      populate: {
+        path: "game writtenOpinion", // Populate the 'game' field inside 'ratingsID'
+      },
+    })
+    .then((data) => {
+      if (data) {
+        res.json({ result: true, ratings: data });
+      } else {
+        res.json({ result: false, error: "user not found" });
+      }
+    });
+});
 
-  User.findOne({username: req.params.username}).populate({
-    path: 'ratingsID', // Populate the ratings
-    populate: {
-      path: 'game writtenOpinion', // Populate the 'game' field inside 'ratingsID'
-    },
-  }).then(data => {
-    if (data){
-      res.json({result : true, ratings: data})
-    } else {
-      res.json({result : false, error:'user not found'})
-    }
+// route get pour avoir les avis d'1 jeux
+router.get("/bygame/:game", (req, res) => {
+  Game.findOne({ name: req.params.game })
+    .populate("userOpinion")
+    .then((data) => {
+      if (data) {
+        console.log(data);
+
+        res.json({ result: true, ratings: data.userOpinion });
+      } else {
+        res.json({ result: false, error: "game not found" });
+      }
+    });
+});
+
+// route post pour avoir les avis des amis d'un user
+
+router.post("/friendsreview", async (req, res) => {
+  const { friendsList = [] } = await User.findOne({
+    username: req.body.username,
   })
+    .select("friendsList")
+    .lean();
 
-})
-
-
-// route get pour avoir les avis d'1 jeux 
-router.get('/bygame/:game', (req, res) => {
-
-  Game.findOne({name: req.params.game}).populate('userOpinion').then(data => {
-    if (data){
-      console.log(data);
-      
-      res.json({result : true, ratings: data.userOpinion})
-    }else {
-      res.json({result : false, error:'game not found'})
-    }
-  })
-
-})
-
-
-
-// route post pour avoir les avis des amis d'un user 
-
-router.post('/friendsreview', async (req, res) => {
-  const { friendsList = [] } = await User.findOne({username: req.body.username}).select('friendsList').lean()
-  
   const reviews = await Ratings.aggregate([
     {
       $match: {
         user: {
-          $in: friendsList
-        }
-      }
+          $in: friendsList,
+        },
+      },
     },
     {
       $lookup: {
         from: "games",
         localField: "game",
         foreignField: "_id",
-        as: "game"
-      }
+        as: "game",
+      },
     },
     {
       $lookup: {
         from: "users",
         localField: "user",
         foreignField: "_id",
-        as: "user"
-      }
+        as: "user",
+      },
     },
     {
       $project: {
         gameName: {
-          $first: "$game.name"
+          $first: "$game.name",
         },
         gameCover: {
-          $first: "$game.cover"
+          $first: "$game.cover",
         },
         username: {
-          $first: "$user.username"
+          $first: "$user.username",
         },
         profilePicture: {
-          $first: "$user.profilePicture"
+          $first: "$user.profilePicture",
         },
         note: 1,
         writtenOpinion: 1,
         nbLikes: {
-          $size: "$likesNumber"
+          $size: "$likesNumber",
         },
         likesCounter: {
-          $ifNull: ["$likesNumber", []]
+          $ifNull: ["$likesNumber", []],
         },
-      }
-    }
-  ])
+      },
+    },
+  ]);
 
-  res.json({result:true, ratings: reviews})
-})
+  res.json({ result: true, ratings: reviews });
+});
 
 // route post pour avoir les avis des mes amis pour un jeu
 
-router.post('/friendsreview/bygame', async (req, res) => {
-  const { friendsList = [] } = await User.findOne({username: req.body.username}).select('friendsList').lean()
-  const gameid = await Game.findOne({ name: req.body.name })
+router.post("/friendsreview/bygame", async (req, res) => {
+  const { friendsList = [] } = await User.findOne({
+    username: req.body.username,
+  })
+    .select("friendsList")
+    .lean();
+  const gameid = await Game.findOne({ name: req.body.name });
   //console.log(gameid)
-  const reviews = await Ratings.aggregate(
-    [
-      {
-        $match: {
-          user: {
-            $in: friendsList
-          }
-        }
+  const reviews = await Ratings.aggregate([
+    {
+      $match: {
+        user: {
+          $in: friendsList,
+        },
       },
-      {
-        $match: {
-          game: gameid._id
-        }
+    },
+    {
+      $match: {
+        game: gameid._id,
       },
-      {
-        $lookup: {
-          from: "games",
-          localField: "game",
-          foreignField: "_id",
-          as: "game"
-        }
+    },
+    {
+      $lookup: {
+        from: "games",
+        localField: "game",
+        foreignField: "_id",
+        as: "game",
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user"
-        }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
       },
-      {
-        $project: {
-          username: {
-            $first: "$user.username"
-          },
-          profilePicture: {
-            $first: "$user.profilePicture"
-          },
-          note: 1,
-          writtenOpinion: 1,
-          likesCounter: {
-            $ifNull: ["$likesNumber", []]
-          },
-          nbLikes: {
-            $size: "$likesNumber"
-          },
-        }
-      }
-    ]
-  )
+    },
+    {
+      $project: {
+        username: {
+          $first: "$user.username",
+        },
+        profilePicture: {
+          $first: "$user.profilePicture",
+        },
+        note: 1,
+        writtenOpinion: 1,
+        likesCounter: {
+          $ifNull: ["$likesNumber", []],
+        },
+        nbLikes: {
+          $size: "$likesNumber",
+        },
+      },
+    },
+  ]);
 
-  res.json({result:true, ratings: reviews})
-})
-
+  res.json({ result: true, ratings: reviews });
+});
 
 //route pour liker une review et l'enregistrer en BDD
-
 
 router.put("/likeOrDislikeAReview", async (req, res) => {
   try {
@@ -212,62 +220,63 @@ router.put("/likeOrDislikeAReview", async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ result: false, message: "Erreur serveur", error: err.message });
+    return res
+      .status(500)
+      .json({ result: false, message: "Erreur serveur", error: err.message });
   }
 });
 
-
 //recuperer tous les avis
 
-router.get('/all', async (req, res) => {
-
+router.get("/all", async (req, res) => {
+  //using the aggregate method to only get the relevent fields
   const reviews = await Ratings.aggregate([
-       { $lookup: {
-          from: "games",
-          localField: "game",
-          foreignField: "_id",
-          as: "game"
-        }
+    {
+      // get infos from the games field in ratings collection
+      $lookup: {
+        from: "games",
+        localField: "game",
+        foreignField: "_id",
+        as: "game",
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "user",
-          foreignField: "_id",
-          as: "user"
-        }
+    },
+    {
+      // get infos from the user in the ratings collection
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
       },
-      {
-        $project: {
-          gameName: {
-            $first: "$game.name"
-          },
-          gameCover: {
-            $first: "$game.cover"
-          },
-          username: {
-            $first: "$user.username"
-          },
-          profilePicture: {
-            $first: "$user.profilePicture"
-          },
-          note: 1,
-          writtenOpinion: 1,
-          nbLikes: {
-            $first: "$game.likesNumber"
-          },
-          likesCounter: {
-            $ifNull: ["$likesNumber", []]
-          },
-        }
-      }
-    ]
-  )
+    },
+    {
+      //return these specifics fiels
+      $project: {
+        gameName: {
+          $first: "$game.name",
+        },
+        gameCover: {
+          $first: "$game.cover",
+        },
+        username: {
+          $first: "$user.username",
+        },
+        profilePicture: {
+          $first: "$user.profilePicture",
+        },
+        note: 1,
+        writtenOpinion: 1,
+        nbLikes: {
+          $first: "$game.likesNumber",
+        },
+        likesCounter: {
+          $ifNull: ["$likesNumber", []],
+        },
+      },
+    },
+  ]);
 
-  res.json({result:true, ratings: reviews})
-})
-
-
-
+  res.json({ result: true, ratings: reviews });
+});
 
 module.exports = router;
