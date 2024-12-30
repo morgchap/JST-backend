@@ -44,7 +44,9 @@ router.post("/newgames", async (req, res, next) => {
 
 
 
-
+// add a game to a list
+// also have to add the list in the list's list in the game's database's side (which contain all the lists that contain this game)
+// also have to add the game in the database if it isn't already in it
 router.post("/addToList", async (req, res) => {
   const { username, listName, gameName } = req.body
 
@@ -117,6 +119,7 @@ router.post('/byname', (req, res) => {
 
 
 // Delete a game from a list
+// if you try to delete the game from the main list ("All my games") while it is still in another list, you won't be able to
 router.delete("/:listName/:gameName/:username", async (req, res) => {
   try {
     const { listName, gameName, username } = req.params
@@ -138,18 +141,13 @@ router.delete("/:listName/:gameName/:username", async (req, res) => {
 
     // check, while listName is "All my games", if the game is in another list
     if(listName2 === "All my games"){
-console.log(listName2)
       const listCheck = await List.find({ user: user._id })
       let check = true
       // check in every list except for "All my games" 
       for(let games of listCheck){
-        // if the list is "All my games", don't check anything
-        if(!(games.listName === listName2)){
+        if(!(games.listName === listName2)){ // condition : if the list is not "All my games", check if the game is in the list
           for(let gameId of games.gameList){
-//console.log(gameId, game._id)
-//console.log(gameId.equals(game._id))
             if((gameId.equals(game._id)) && check){
-console.log(gameId, game._id)
               res.json({ result: false, error: "The game is in another list" })
               check = false
               break
@@ -157,19 +155,21 @@ console.log(gameId, game._id)
           }
         }
       }
-console.log("check", check)
+      // if check is true : the game is not in another list, you can delete the game from "All my games"
       if(check){
-        // update la list de list qui comprend le jeu
+        // update the list's lists in the game's database
         await Game.updateOne({ name: gameName } ,{ $pull: {lists: list._id} })
-        // update la list pour retirer le jeu
+        // update the list to delete the game in it
         await List.updateOne({ listName: listName2, user: user._id } ,{ $pull: {gameList: game._id} })
 
         res.json({ result: true })
       }
+
+    // the list is not "All my games", there is nothing to check, you can just delete the game from the list
     } else {
-      // update la list de list qui comprend le jeu
+      // update the list's lists in the game's database
       await Game.updateOne({ name: gameName } ,{ $pull: {lists: list._id} })
-      // update la list pour retirer le jeu
+      // update the list to delete the game in it
       await List.updateOne({ listName: listName2, user: user._id } ,{ $pull: {gameList: game._id} })
       
       res.json({ result: true })
